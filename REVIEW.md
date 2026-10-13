@@ -1,0 +1,16 @@
+# Review
+
+I found several defects in the starter implementation and fixed them in the final version of the app.
+
+| # | Where | What is wrong | How you'd notice it | How I fixed it |
+|---|---|---|---|---|
+| 1 | Helper logic | The original late-minute and overnight-date calculations did not correctly respect IST and overnight shifts. This caused wrong attendance dates and wrong late calculations for early-morning overnight punches. | Punching in at an overnight time such as 22:00-06:00 produced the wrong date or incorrect late timing. | I corrected the date assignment and late computation to use IST-aware logic with overnight handling. |
+| 2 | Punch-in and punch-out validation | The starter did not consistently validate epoch timing and did not enforce the 24-hour and ordering rules correctly. | Punch-out after punch-in or values outside the valid range could be accepted incorrectly. | I added strict validation for epoch values and required punch-out times to be after punch-in and within 24 hours. |
+| 3 | Punch-out handling | The starter could select the wrong record when multiple attendance records existed and did not respect the most recent valid punch-in. | A later record could be closed by mistake or the update could fail for overnight employees. | I updated the lookup to choose the latest valid punch-in for the employee and close only the matching open record. |
+| 4 | Attendance date handling | The starter did not determine the attendance day correctly for overnight shifts. | Employees with a night shift could be assigned to the wrong date. | I introduced date logic that treats the attendance day as the shift start date when the shift is overnight. |
+| 5 | Analytics logic | The starter's monthly and department summaries were too simplistic and could ignore zero-log employees or compute wrong department totals. | Headcount or department present-day totals looked wrong for partial months or zero-log employees. | I implemented month-based counting with headcount from joined_on and department totals from the stored attendance records. |
+| 6 | Trend window logic | The moving-average window did not correctly compute the 7-day average when rates were null. | Weekend rows and missing days could distort the value. | I used a bounded rolling window and computed the mean only from non-null values in the current window. |
+| 7 | Concurrency and duplicate safety | The original create and punch-in logic did not clearly handle duplicate-key races. | Simultaneous identical requests could lead to duplicate records. | I relied on database unique indexes and duplicate-key handling to produce exactly one success and the rest 409. |
+| 8 | Response shapes | The starter returned inconsistent field shapes, especially for datetimes and history objects. | Clients received naive or inconsistent time values and nested field conversions were wrong. | I normalized all API responses to epoch milliseconds and ensured nested history values were correctly converted. |
+
+Not a defect: The startup index set was mostly sensible; I kept a compact set of useful indexes rather than adding extra low-value indexes. The project does not need a full text index or large status-only index for this workload.
